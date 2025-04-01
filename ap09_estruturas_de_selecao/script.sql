@@ -125,3 +125,18 @@ $$
 -- RETURN FLOOR(RANDOM() * (lim_superior - lim_inferior + 1) + lim_inferior)::INT;
 -- END;
 -- $$ LANGUAGE plpgsql;
+
+
+
+-- EXPLICAÇÃO DA ESTRUTURA -> CASE WHEN THEN
+-- CASE
+--     WHEN idade < 18 THEN 'Menor de idade'
+--     WHEN idade < 60 THEN 'Adulto'
+--     ELSE 'Idoso'
+-- END AS faixa_etaria
+
+-- Em "português SQLês", seria tipo:
+
+-- Caso seja idade menor que 18, então 'Menor de idade';
+-- Quando for menor que 60, então 'Adulto';
+-- Senão, 'Idoso'.
