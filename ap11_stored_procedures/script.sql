@@ -207,48 +207,48 @@
 -- END;
 -- $$
 
-CREATE OR REPLACE PROCEDURE sp_calcular_valor_de_um_pedido(
-  IN p_cod_pedido INT, 
-  OUT p_valor_total INT
-)
-LANGUAGE plpgsql
-AS $$
-BEGIN
-  IF p_cod_cliente IS NULL THEN
-    INSERT INTO tb_cliente (nome) VALUES (p_nome);
-  ELSE
-    INSERT INTO tb_cliente 
-    (cod_cliente, nome) VALUES
-    (p_cod_cliente, p_nome);
-  END IF;
-  SELECT SUM(i.valor) FROM
-    tb_pedido p
-    INNER JOIN tb_item_pedido ip
-    ON p.cod_pedido = ip.cod_pedido
-    INNER JOIN tb_item i
-    ON ip.cod_item = i.cod_item
-    WHERE p.cod_pedido = p_cod_pedido
-    INTO $2;
-END;
-$$
+-- CREATE OR REPLACE PROCEDURE sp_calcular_valor_de_um_pedido(
+--   IN p_cod_pedido INT, 
+--   OUT p_valor_total INT
+-- )
+-- LANGUAGE plpgsql
+-- AS $$
+-- BEGIN
+--   IF p_cod_cliente IS NULL THEN
+--     INSERT INTO tb_cliente (nome) VALUES (p_nome);
+--   ELSE
+--     INSERT INTO tb_cliente 
+--     (cod_cliente, nome) VALUES
+--     (p_cod_cliente, p_nome);
+--   END IF;
+--   SELECT SUM(i.valor) FROM
+--     tb_pedido p
+--     INNER JOIN tb_item_pedido ip
+--     ON p.cod_pedido = ip.cod_pedido
+--     INNER JOIN tb_item i
+--     ON ip.cod_item = i.cod_item
+--     WHERE p.cod_pedido = p_cod_pedido
+--     INTO $2;
+-- END;
+-- $$
 
-CALL sp_adicionar_item_a_pedido(1, 1);
-SELECT * FROM tb_item_pedido;
-SELECT * FROM tb_pedido;
+-- CALL sp_adicionar_item_a_pedido(1, 1);
+-- SELECT * FROM tb_item_pedido;
+-- SELECT * FROM tb_pedido;
 
-CREATE OR REPLACE PROCEDURE sp_adicionar_item_a_pedido(
-  IN p_cod_item INT, IN p_cod_pedido INT
-)
-LANGUAGE plpgsql
-AS $$
-BEGIN
-  INSERT INTO tb_item_pedido (cod_item, cod_pedido)
-  VALUES($1, $2);
-  UPDATE tb_pedido p SET 
-    data_modificacao = CURRENT_TIMESTAMP
-    WHERE p.cod_pedido = $2;
-END;
-$$
+-- CREATE OR REPLACE PROCEDURE sp_adicionar_item_a_pedido(
+--   IN p_cod_item INT, IN p_cod_pedido INT
+-- )
+-- LANGUAGE plpgsql
+-- AS $$
+-- BEGIN
+--   INSERT INTO tb_item_pedido (cod_item, cod_pedido)
+--   VALUES($1, $2);
+--   UPDATE tb_pedido p SET 
+--     data_modificacao = CURRENT_TIMESTAMP
+--     WHERE p.cod_pedido = $2;
+-- END;
+-- $$
 
 -- SELECT * FROM tb_pedido;
 
@@ -286,47 +286,210 @@ $$
 -- print(idade)
 
 
--- Active: 1742297520106@@127.0.0.1@5432@
-INSERT INTO tb_cliente (nome) VALUES ('Ana Silva');
-SELECT * FROM tb_cliente;
+-- -- Active: 1742297520106@@127.0.0.1@5432@
+-- INSERT INTO tb_cliente (nome) VALUES ('Ana Silva');
+-- SELECT * FROM tb_cliente;
+
+-- DO $$
+-- DECLARE
+--   v_cod_pedido INT;
+--   v_cod_cliente INT;
+-- BEGIN
+--   SELECT cod_cliente FROM tb_cliente 
+--     WHERE nome LIKE 'Ana Silva' INTO v_cod_cliente;
+--   CALL sp_criar_pedido(v_cod_pedido, v_cod_cliente);
+--   RAISE NOTICE 'Código do pedido recém criado: %', v_cod_pedido;
+-- END;
+-- $$
+
+
+-- CREATE OR REPLACE PROCEDURE sp_criar_pedido(
+--   OUT p_cod_pedido INT, IN p_cod_cliente INT
+-- )
+-- LANGUAGE plpgsql
+-- AS $$
+-- BEGIN
+--   INSERT INTO tb_pedido(cod_cliente) VALUES (p_cod_cliente);
+--   SELECT LASTVAL() INTO p_cod_pedido;
+-- END;
+-- $$
+
+
+-- CREATE OR REPLACE PROCEDURE sp_cadastrar_cliente
+-- (IN p_nome VARCHAR(200), IN p_cod_cliente INT DEFAULT NULL)
+-- LANGUAGE plpgsql
+-- AS $$
+-- BEGIN
+--   IF p_cod_cliente IS NULL THEN
+--     INSERT INTO tb_cliente (nome) VALUES (p_nome);
+--   ELSE
+--     INSERT INTO tb_cliente 
+--     (cod_cliente, nome) VALUES
+--     (p_cod_cliente, p_nome);
+--   END IF;
+-- END;
+-- $$
+
+DO
+$$
+DECLARE
+  v_troco INT;
+  v_valor_total INT;
+  v_valor_a_pagar INT := 100;
+  v_cod_pedido INT := 1;
+BEGIN 
+  CALL sp_calcular_valor_de_um_pedido(
+    v_cod_pedido,
+    v_valor_total
+  );
+  CALL sp_calcular_troco(
+    v_troco,
+    v_valor_a_pagar,
+    v_valor_total
+  );
+  RAISE NOTICE 'A conta foi de R$%  e você pagou R$%. Troco: RS$%',
+  v_valor_total, v_valor_a_pagar, v_troco;
+END;
+$$
+
+
 
 DO $$
 DECLARE
-  v_cod_pedido INT;
-  v_cod_cliente INT;
+  v_troco INT;
+  v_valor_total INT;
+  v_valor_a_pagar INT := 100;
+  v_cod_pedido INT := 1;
 BEGIN
-  SELECT cod_cliente FROM tb_cliente 
-    WHERE nome LIKE 'Ana Silva' INTO v_cod_cliente;
-  CALL sp_criar_pedido(v_cod_pedido, v_cod_cliente);
-  RAISE NOTICE 'Código do pedido recém criado: %', v_cod_pedido;
+  CALL sp_calcular_valor_de_um_pedido(
+    v_cod_pedido, 
+    v_valor_total
+  );
+  CALL sp_calcular_troco(
+    v_troco,
+    v_valor_a_pagar,
+    v_valor_total
+  );
+  RAISE NOTICE 
+    'A conta foi de R$% e você pagou R$%. Troco: R$%',
+    v_valor_total, v_valor_a_pagar, v_troco;
 END;
 $$
 
 
-CREATE OR REPLACE PROCEDURE sp_criar_pedido(
-  OUT p_cod_pedido INT, IN p_cod_cliente INT
-)
-LANGUAGE plpgsql
+
+CREATE OR REPLACE PROCEDURE sp_calcular_troco(
+  OUT p_troco INT,
+  IN p_valor_a_pagar INT,
+  IN p_valor_total INT
+) LANGUAGE plpgsql
 AS $$
 BEGIN
-  INSERT INTO tb_pedido(cod_cliente) VALUES (p_cod_cliente);
-  SELECT LASTVAL() INTO p_cod_pedido;
+  p_troco := p_valor_a_pagar - p_valor_total;
 END;
 $$
 
 
-CREATE OR REPLACE PROCEDURE sp_cadastrar_cliente
-(IN p_nome VARCHAR(200), IN p_cod_cliente INT DEFAULT NULL)
-LANGUAGE plpgsql
-AS $$
+
+DO $$
+DECLARE
+  v_cod_pedido INT := 1;
 BEGIN
-  IF p_cod_cliente IS NULL THEN
-    INSERT INTO tb_cliente (nome) VALUES (p_nome);
+  CALL sp_fechar_pedido(200, v_cod_pedido);
+END;
+$$
+
+SELECT * FROM tb_pedido;
+
+
+CREATE OR REPLACE PROCEDURE sp_fechar_pedido(
+  IN p_valor_a_pagar INT,
+  IN p_cod_pedido INT
+) LANGUAGE plpgsql 
+AS $$
+DECLARE
+  v_valor_total INT;
+BEGIN
+  CALL sp_calcular_valor_de_um_pedido(
+    p_cod_pedido,
+    v_valor_total
+  );
+  IF p_valor_a_pagar < v_valor_total THEN
+    RAISE NOTICE 
+      'R$% insuficiente para pagar a conta de R$%',
+      p_valor_a_pagar,
+      v_valor_total;
   ELSE
-    INSERT INTO tb_cliente 
-    (cod_cliente, nome) VALUES
-    (p_cod_cliente, p_nome);
+    UPDATE tb_pedido p SET
+    data_modificacao = CURRENT_TIMESTAMP,
+    status = 'fechado'
+    WHERE p.cod_pedido = p_cod_pedido;
   END IF;
 END;
 $$
 
+
+DO 
+$$
+DECLARE 
+  v_valor_total INT;
+  v_cod_pedido INT := 1;
+BEGIN
+  CALL sp_calcular_valor_de_um_pedido(v_cod_pedido, v_valor_total);
+  RAISE NOTICE 'Total do Pedido %: R$ %', v_cod_pedido, v_valor_total;
+END;
+$$
+
+CREATE OR REPLACE PROCEDURE sp_calcular_valor_de_um_pedido(
+  IN p_cod_pedido INT, OUT p_valor_total INT
+)
+LANGUAGE plpgsql
+AS
+$$
+BEGIN
+  SELECT SUM(i.valor) FROM
+  tb_pedido p 
+  INNER JOIN tb_item_pedido ip 
+  ON p.cod_pedido = ip.cod_pedido
+  INNER JOIN  tb_item i 
+  ON ip.cod_item = i.cod_item
+  WHERE p.cod_pedido = p_cod_pedido
+  INTO $2;
+END;
+$$
+
+DO $$
+DECLARE
+  v_valor_total INT;
+  v_cod_pedido INT := 1;
+BEGIN
+  CALL sp_calcular_valor_de_um_pedido(v_cod_pedido, v_valor_total);
+  RAISE NOTICE 'Total do pedido %: R$%', v_cod_pedido, v_valor_total;
+
+END;
+$$
+
+
+
+
+SELECT * FROM tb_item_pedido;
+SELECT * FROM tb_item;
+
+
+
+CREATE OR REPLACE PROCEDURE sp_calcular_valor_de_um_pedido(
+  IN p_cod_pedido INT, OUT p_valor_total INT
+)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  SELECT SUM(i.valor) FROM
+    tb_pedido p
+    INNER JOIN tb_item_pedido ip
+    ON p.cod_pedido = ip.cod_pedido
+    INNER JOIN tb_item i
+    ON ip.cod_item = i.cod_item
+    WHERE p.cod_pedido = p_cod_pedido
+    INTO $2;
+END;
+$$
